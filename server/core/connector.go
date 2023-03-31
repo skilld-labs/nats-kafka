@@ -423,7 +423,13 @@ func (conn *BridgeConnector) subscribeToJetStream(subject string) (*nats.Subscri
 	return conn.bridge.JetStream().Subscribe(subject, callback, options...)
 }
 
-func (conn *BridgeConnector) setUpListener(target kafka.Consumer, natsCallbackFunc NATSCallback) (ShutdownCallback, error) {
+type KafkaToNatsListener interface {
+	Connector
+	Target() kafka.Consumer
+	Callback() NATSCallback
+}
+
+func (conn *BridgeConnector) setUpKafkaToNatsListener(listener KafkaToNatsListener) (ShutdownCallback, error) {
 	done := make(chan bool)
 	wg := sync.WaitGroup{}
 	wg.Add(1)
@@ -431,6 +437,8 @@ func (conn *BridgeConnector) setUpListener(target kafka.Consumer, natsCallbackFu
 	cancelCtx, cancelFunc := context.WithCancel(context.Background())
 
 	traceEnabled := conn.bridge.Logger().TraceEnabled()
+	target := listener.Target()
+	natsCallbackFunc := listener.Callback()
 
 	listenerCallbackFunc := func(conn *BridgeConnector, msg kafka.Message) {
 		start := time.Now()

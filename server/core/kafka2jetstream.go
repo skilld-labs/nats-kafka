@@ -59,7 +59,7 @@ func (conn *Kafka2JetStreamConnector) Start() error {
 		conn.bridge.Logger().Noticef(s.NetInfo())
 	}
 
-	cb, err := conn.setUpListener(conn.reader, conn.jetStreamMessageHandler)
+	cb, err := conn.setUpKafkaToNatsListener(conn)
 	if err != nil {
 		return err
 	}
@@ -70,6 +70,14 @@ func (conn *Kafka2JetStreamConnector) Start() error {
 	conn.bridge.Logger().Noticef("started connection %s", conn.String())
 
 	return nil
+}
+
+func (conn *Kafka2JetStreamConnector) Target() kafka.Consumer {
+	return conn.reader
+}
+
+func (conn *Kafka2JetStreamConnector) Callback() NATSCallback {
+	return conn.jetStreamMessageHandler
 }
 
 // Shutdown the connector
